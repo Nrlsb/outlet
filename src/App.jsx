@@ -77,6 +77,20 @@ const XIcon = ({ size = 16, className = "" }) => (
     <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
+
+// (NUEVO) Iconos para +/-
+const PlusIcon = ({ size = 16, className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+const MinusIcon = ({ size = 16, className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
 // --- Fin Iconos ---
 
 
@@ -97,7 +111,8 @@ const formatCurrency = (amount) => {
 const ITEMS_PER_PAGE = 50; // Cuántos items cargar cada vez
 
 // --- (NUEVO) Componente de Carrito ---
-function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart }) {
+// (MODIFICADO) Acepta nuevas props 'onIncrement' y 'onDecrement'
+function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIncrement, onDecrement }) {
   // Calcula el total
   const total = useMemo(() => {
     return cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -157,13 +172,30 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart }) {
                   {item.description}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm">
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => onUpdateQuantity(item.code, e.target.value)}
-                    className="w-20 text-center border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
+                  {/* (MODIFICADO) Controlador de cantidad +/- */}
+                  <div className="flex items-center justify-center">
+                    <button
+                      onClick={() => onDecrement(item.code)}
+                      className="p-1.5 border border-gray-300 rounded-l-md bg-gray-50 hover:bg-gray-100 text-gray-700 transition-colors"
+                      title="Restar uno"
+                    >
+                      <MinusIcon size={14} />
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => onUpdateQuantity(item.code, e.target.value)}
+                      className="w-14 text-center border-t border-b border-gray-300 py-1 px-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => onIncrement(item.code)}
+                      className="p-1.5 border border-gray-300 rounded-r-md bg-gray-50 hover:bg-gray-100 text-gray-700 transition-colors"
+                      title="Sumar uno"
+                    >
+                      <PlusIcon size={14} />
+                    </button>
+                  </div>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold text-gray-900">
                   {formatCurrency(item.price * item.quantity)}
@@ -209,8 +241,17 @@ function PriceListPage() {
   const [error, setError] = useState(null);
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   
-  // (NUEVO) Estado del carrito
-  const [cart, setCart] = useState([]);
+  // (MODIFICADO) Estado del carrito, inicializado desde localStorage
+  const [cart, setCart] = useState(() => {
+    try {
+      // Intenta cargar el carrito guardado
+      const savedCart = localStorage.getItem('priceListCart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (error) {
+      console.error("Error al cargar el carrito de localStorage", error);
+      return []; // Empieza vacío si hay un error
+    }
+  });
 
   // Hook para el "infinite scroll"
   const { ref, inView } = useInView();
@@ -235,6 +276,15 @@ function PriceListPage() {
       });
   }, []);
   
+  // (NUEVO) Hook para guardar el carrito en localStorage cada vez que cambia
+  useEffect(() => {
+    try {
+      localStorage.setItem('priceListCart', JSON.stringify(cart));
+    } catch (error) {
+      console.error("Error al guardar el carrito en localStorage", error);
+    }
+  }, [cart]); // El array de dependencia [cart] es la clave
+
   // --- (NUEVO) Lógica del Carrito ---
 
   // 1. Set de códigos en el carrito (para búsquedas rápidas)
@@ -285,6 +335,38 @@ function PriceListPage() {
   const handleClearCart = () => {
     setCart([]);
   };
+
+  // (NUEVO) 6. Incrementar cantidad
+  const handleIncrementQuantity = (productCode) => {
+    setCart(prevCart =>
+      prevCart.map(item =>
+        item.code === productCode
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      )
+    );
+  };
+  
+  // (NUEVO) 7. Decrementar cantidad
+  const handleDecrementQuantity = (productCode) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(item => item.code === productCode);
+
+      // Si la cantidad es 1 o menos, elimínalo
+      if (existingItem && existingItem.quantity <= 1) {
+        // Llama a la función de remover
+        return prevCart.filter(item => item.code !== productCode);
+      }
+
+      // Si es mayor que 1, réstale uno
+      return prevCart.map(item =>
+        item.code === productCode
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
+      );
+    });
+  };
+
 
   // --- Lógica de Filtros (Sin cambios) ---
   const filteredProducts = useMemo(() => {
@@ -373,6 +455,8 @@ function PriceListPage() {
         onRemoveItem={handleRemoveFromCart}
         onUpdateQuantity={handleUpdateQuantity}
         onClearCart={handleClearCart}
+        onIncrement={handleIncrementQuantity}
+        onDecrement={handleDecrementQuantity}
       />
       
       {/* --- Título de la tabla de productos --- */}
