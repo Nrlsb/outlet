@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 
 // --- Iconos (Sin cambios) ---
-// Icono de Búsqueda (Search)
 const SearchIcon = ({ size = 20, className = "" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -21,7 +20,6 @@ const SearchIcon = ({ size = 20, className = "" }) => (
   </svg>
 );
 
-// Icono de Carga (Loader2)
 const LoaderIcon = ({ size = 20, className = "" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -39,7 +37,6 @@ const LoaderIcon = ({ size = 20, className = "" }) => (
   </svg>
 );
 
-// --- (NUEVO) Iconos para el Carrito ---
 const PlusCircleIcon = ({ size = 18, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <circle cx="12" cy="12" r="10" />
@@ -78,7 +75,6 @@ const XIcon = ({ size = 16, className = "" }) => (
   </svg>
 );
 
-// (NUEVO) Iconos para +/-
 const PlusIcon = ({ size = 16, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <line x1="12" y1="5" x2="12" y2="19" />
@@ -94,7 +90,7 @@ const MinusIcon = ({ size = 16, className = "" }) => (
 // --- Fin Iconos ---
 
 
-// Helper: Formateador de Moneda (Sin cambios)
+// Helper: Formateador de Moneda
 const formatCurrency = (amount) => {
   if (amount === null || amount === undefined) {
     return '$0.00';
@@ -108,10 +104,9 @@ const formatCurrency = (amount) => {
 };
 
 // --- Constantes ---
-const ITEMS_PER_PAGE = 50; // Cuántos items cargar cada vez
+const ITEMS_PER_PAGE = 50;
 
-// --- (NUEVO) Componente de Carrito ---
-// (MODIFICADO) Acepta nuevas props 'onIncrement' y 'onDecrement'
+// --- Componente de Carrito (MODIFICADO) ---
 function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIncrement, onDecrement }) {
   // Calcula el total
   const total = useMemo(() => {
@@ -124,10 +119,12 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
 
   return (
     <div className="mb-6 bg-white rounded-lg shadow-md border border-gray-200">
-      <header className="flex items-center justify-between p-4 border-b border-gray-200">
+      {/* (MODIFICADO) Header con padding responsivo y título más chico en móvil */}
+      <header className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
           <ShoppingCartIcon className="text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-800">
+          {/* (MODIFICADO) Título responsivo */}
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800">
             Productos Seleccionados
           </h2>
         </div>
@@ -136,12 +133,66 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
           className="flex items-center gap-1.5 text-sm text-red-600 hover:text-red-800 font-medium transition-colors"
         >
           <XIcon size={14} />
-          Vaciar Lista
+          {/* (MODIFICADO) Texto oculto en móvil, visible en escritorio */}
+          <span className="hidden sm:inline">Vaciar Lista</span>
         </button>
       </header>
 
-      {/* Tabla del Carrito */}
-      <div className="overflow-x-auto">
+      {/* (NUEVO) Vista de Tarjetas para Móvil */}
+      <div className="sm:hidden divide-y divide-gray-200">
+        {cartItems.map(item => (
+          <div key={item.code} className="p-3">
+            <div className="flex justify-between items-start">
+              {/* Info del Producto */}
+              <div className="flex-1 pr-2">
+                <p className="font-semibold text-gray-800">{item.description}</p>
+                <p className="text-sm text-gray-500">Código: {item.code}</p>
+              </div>
+              {/* Botón de Quitar */}
+              <button
+                onClick={() => onRemoveItem(item.code)}
+                className="text-red-600 hover:text-red-800 p-1"
+                title="Quitar producto"
+              >
+                <Trash2Icon size={16} />
+              </button>
+            </div>
+            <div className="flex justify-between items-center mt-3">
+              {/* Controlador de Cantidad */}
+              <div className="flex items-center">
+                <button
+                  onClick={() => onDecrement(item.code)}
+                  className="p-1.5 border border-gray-300 rounded-l-md bg-gray-50 hover:bg-gray-100 text-gray-700 transition-colors"
+                  title="Restar uno"
+                >
+                  <MinusIcon size={14} />
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  value={item.quantity}
+                  onChange={(e) => onUpdateQuantity(item.code, e.target.value)}
+                  className="w-12 text-center border-t border-b border-gray-300 py-1 px-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <button
+                  onClick={() => onIncrement(item.code)}
+                  className="p-1.5 border border-gray-300 rounded-r-md bg-gray-50 hover:bg-gray-100 text-gray-700 transition-colors"
+                  title="Sumar uno"
+                >
+                  <PlusIcon size={14} />
+                </button>
+              </div>
+              {/* Subtotal */}
+              <p className="font-semibold text-gray-900 text-right">
+                {formatCurrency(item.price * item.quantity)}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* (MODIFICADO) Vista de Tabla para Escritorio (oculta en móvil) */}
+      <div className="overflow-x-auto hidden sm:block">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -172,7 +223,6 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
                   {item.description}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm">
-                  {/* (MODIFICADO) Controlador de cantidad +/- */}
                   <div className="flex items-center justify-center">
                     <button
                       onClick={() => onDecrement(item.code)}
@@ -212,20 +262,14 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
               </tr>
             ))}
           </tbody>
-          {/* Footer con Total */}
-          <tfoot className="bg-gray-50">
-            <tr>
-              <td colSpan="3" className="px-4 py-3 text-right text-sm font-bold text-gray-700 uppercase">
-                Total
-              </td>
-              <td className="px-4 py-3 text-right text-lg font-bold text-gray-900">
-                {formatCurrency(total)}
-              </td>
-              <td className="px-4 py-3"></td>
-            </tr>
-          </tfoot>
         </table>
       </div>
+
+      {/* (NUEVO) Footer con Total (visible en todas las pantallas) */}
+      <footer className="bg-gray-50 p-3 sm:p-4 border-t flex justify-end items-center">
+        <span className="text-sm font-medium text-gray-700 uppercase mr-4">Total</span>
+        <span className="text-xl font-bold text-gray-900">{formatCurrency(total)}</span>
+      </footer>
     </div>
   );
 }
@@ -234,29 +278,25 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
 // --- Componente de Página (Refactorizado) ---
 
 function PriceListPage() {
-  // --- Estados ---
+  // --- Estados (Sin cambios) ---
   const [searchTerm, setSearchTerm] = useState('');
   const [allProducts, setAllProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
-  
-  // (MODIFICADO) Estado del carrito, inicializado desde localStorage
   const [cart, setCart] = useState(() => {
     try {
-      // Intenta cargar el carrito guardado
       const savedCart = localStorage.getItem('priceListCart');
       return savedCart ? JSON.parse(savedCart) : [];
     } catch (error) {
       console.error("Error al cargar el carrito de localStorage", error);
-      return []; // Empieza vacío si hay un error
+      return [];
     }
   });
 
-  // Hook para el "infinite scroll"
   const { ref, inView } = useInView();
   
-  // --- Carga de Datos (Sin cambios) ---
+  // --- Carga de Datos y Guardado en LocalStorage (Sin cambios) ---
   useEffect(() => {
     fetch('/products.json')
       .then(response => {
@@ -276,49 +316,38 @@ function PriceListPage() {
       });
   }, []);
   
-  // (NUEVO) Hook para guardar el carrito en localStorage cada vez que cambia
   useEffect(() => {
     try {
       localStorage.setItem('priceListCart', JSON.stringify(cart));
     } catch (error) {
       console.error("Error al guardar el carrito en localStorage", error);
     }
-  }, [cart]); // El array de dependencia [cart] es la clave
+  }, [cart]);
 
-  // --- (NUEVO) Lógica del Carrito ---
-
-  // 1. Set de códigos en el carrito (para búsquedas rápidas)
+  // --- Lógica del Carrito (Sin cambios) ---
   const cartItemCodes = useMemo(() => new Set(cart.map(item => item.code)), [cart]);
 
-  // 2. Agregar al carrito
   const handleAddToCart = (productToAdd) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.code === productToAdd.code);
-
       if (existingItem) {
-        // Si ya existe, incrementa la cantidad
         return prevCart.map(item =>
           item.code === productToAdd.code
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       } else {
-        // Si es nuevo, lo agrega con cantidad 1
         return [...prevCart, { ...productToAdd, quantity: 1 }];
       }
     });
   };
 
-  // 3. Actualizar cantidad
   const handleUpdateQuantity = (productCode, newQuantityStr) => {
     const newQuantity = parseInt(newQuantityStr, 10);
-
     if (isNaN(newQuantity) || newQuantity <= 0) {
-      // Si la cantidad es inválida o 0, elimina el ítem
       handleRemoveFromCart(productCode);
       return;
     }
-
     setCart(prevCart =>
       prevCart.map(item =>
         item.code === productCode ? { ...item, quantity: newQuantity } : item
@@ -326,17 +355,14 @@ function PriceListPage() {
     );
   };
 
-  // 4. Quitar del carrito
   const handleRemoveFromCart = (productCode) => {
     setCart(prevCart => prevCart.filter(item => item.code !== productCode));
   };
 
-  // 5. Vaciar carrito
   const handleClearCart = () => {
     setCart([]);
   };
 
-  // (NUEVO) 6. Incrementar cantidad
   const handleIncrementQuantity = (productCode) => {
     setCart(prevCart =>
       prevCart.map(item =>
@@ -347,18 +373,12 @@ function PriceListPage() {
     );
   };
   
-  // (NUEVO) 7. Decrementar cantidad
   const handleDecrementQuantity = (productCode) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.code === productCode);
-
-      // Si la cantidad es 1 o menos, elimínalo
       if (existingItem && existingItem.quantity <= 1) {
-        // Llama a la función de remover
         return prevCart.filter(item => item.code !== productCode);
       }
-
-      // Si es mayor que 1, réstale uno
       return prevCart.map(item =>
         item.code === productCode
           ? { ...item, quantity: item.quantity - 1 }
@@ -366,7 +386,6 @@ function PriceListPage() {
       );
     });
   };
-
 
   // --- Lógica de Filtros (Sin cambios) ---
   const filteredProducts = useMemo(() => {
@@ -376,7 +395,6 @@ function PriceListPage() {
         .toLowerCase()
         .split(' ') 
         .filter(word => word.length > 0); 
-
       products = products.filter(p => {
         const productText = (
           (p.description || '') + ' ' + (p.code || '')
@@ -387,12 +405,10 @@ function PriceListPage() {
     return products;
   }, [allProducts, searchTerm]);
 
-  // Resetea el conteo visible si los filtros cambian
   useEffect(() => {
     setVisibleCount(ITEMS_PER_PAGE);
   }, [searchTerm]);
 
-  // Lógica de "Cargar más"
   useEffect(() => {
     if (inView) {
       setVisibleCount(prevCount =>
@@ -401,16 +417,13 @@ function PriceListPage() {
     }
   }, [inView, filteredProducts.length]);
 
-  // Obtiene la lista final de productos a *mostrar*
   const visibleProducts = useMemo(() => {
     return filteredProducts.slice(0, visibleCount);
   }, [filteredProducts, visibleCount]);
   
-  // Variables de estado para la UI
   const totalProductsFound = filteredProducts.length;
   const hasMore = visibleCount < totalProductsFound;
 
-  // --- Manejadores de eventos ---
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
@@ -418,10 +431,12 @@ function PriceListPage() {
   // --- Renderizado ---
 
   return (
-    <div className="container mx-auto p-4 md:p-6 max-w-7xl">
+    // (MODIFICADO) Padding responsivo
+    <div className="container mx-auto p-3 sm:p-4 md:p-6 max-w-7xl">
       <header className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Lista de Precios</h1>
-        <p className="text-gray-600">
+        {/* (MODIFICADO) Título responsivo */}
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Lista de Precios</h1>
+        <p className="text-gray-600 mt-1">
           Explora nuestro catálogo completo de productos.
           {!isLoading && !error && (
             <span className="ml-2 font-medium text-blue-600">
@@ -431,8 +446,8 @@ function PriceListPage() {
         </p>
       </header>
 
-      {/* --- Barra de Filtros (Sin cambios) --- */}
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-6 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+      {/* --- Barra de Filtros (MODIFICADO) --- */}
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-6 p-3 sm:p-4 bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="relative">
           <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
             Buscar por Código o Nombre
@@ -449,7 +464,7 @@ function PriceListPage() {
         </div>
       </div>
 
-      {/* --- (NUEVO) Lista/Carrito de Productos Seleccionados --- */}
+      {/* --- Lista/Carrito de Productos Seleccionados (Sin cambios) --- */}
       <CartList
         cartItems={cart}
         onRemoveItem={handleRemoveFromCart}
@@ -459,123 +474,137 @@ function PriceListPage() {
         onDecrement={handleDecrementQuantity}
       />
       
-      {/* --- Título de la tabla de productos --- */}
-      <h2 className="text-xl font-bold text-gray-800 mb-3">
+      {/* --- Título de la tabla de productos (MODIFICADO) --- */}
+      <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3">
         Catálogo de Productos
       </h2>
 
-      {/* --- Tabla de Productos (MODIFICADO) --- */}
-      <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-200">
-          {/* (MODIFICADO) Thead actualizado */}
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Código
-              </th>
-              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Descripción
-              </th>
-              <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Precio (ARS)
-              </th>
-              {/* (NUEVO) Columna de Acción */}
-              <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acción
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isLoading ? (
-              // Estado de Carga Inicial
-              <tr>
-                {/* (MODIFICADO) colSpan="4" */}
-                <td colSpan="4" className="text-center py-12">
-                  <div className="flex justify-center items-center text-gray-500">
-                    <LoaderIcon size={24} className="mr-2" />
-                    Cargando productos...
+      {/* (MODIFICADO) Lógica de estados movida fuera de la tabla */}
+      {isLoading ? (
+        <div className="text-center py-12 bg-white rounded-lg shadow border border-gray-200">
+          <div className="flex justify-center items-center text-gray-500">
+            <LoaderIcon size={24} className="mr-2" />
+            Cargando productos...
+          </div>
+        </div>
+      ) : error ? (
+        <div className="text-center py-12 bg-white rounded-lg shadow border border-red-200 text-red-600">
+          Error al cargar los productos: {error.message}.
+          <br/>
+          <span className="text-sm text-gray-600">¿Ejecutaste 'node convert.mjs' y 'products.json' está en 'public'?</span>
+        </div>
+      ) : totalProductsFound === 0 ? (
+        <div className="text-center py-12 bg-white rounded-lg shadow border border-gray-200 text-gray-500">
+          No se encontraron productos que coincidan con los filtros.
+        </div>
+      ) : (
+        // (NUEVO) Contenedor para ambas vistas de lista
+        <div>
+          {/* (NUEVO) Vista de Tarjetas para Móvil */}
+          <div className="sm:hidden">
+            {visibleProducts.map((product) => {
+              const isInCart = cartItemCodes.has(product.code);
+              return (
+                <div key={product.id} className="bg-white rounded-lg shadow border border-gray-200 p-4 mb-3">
+                  <div className="mb-2">
+                    <p className="font-semibold text-gray-800">{product.description}</p>
+                    <p className="text-sm text-gray-500">Código: {product.code}</p>
                   </div>
-                </td>
-              </tr>
-            ) : error ? (
-              // Estado de Error
-              <tr>
-                {/* (MODIFICADO) colSpan="4" */}
-                <td colSpan="4" className="text-center py-12 text-red-600">
-                  Error al cargar los productos: {error.message}.
-                  <br/>
-                  <span className="text-sm text-gray-600">¿Ejecutaste el script 'node convert.mjs' y colocaste 'products.json' en la carpeta 'public'?</span>
-                </td>
-              </tr>
-            ) : totalProductsFound === 0 ? (
-               // Estado Vacío (sin resultados)
-              <tr>
-                {/* (MODIFICADO) colSpan="4" */}
-                <td colSpan="4" className="text-center py-12 text-gray-500">
-                  No se encontraron productos que coincidan con los filtros.
-                </td>
-              </tr>
-            ) : (
-              // (MODIFICADO) Mostrar productos
-              visibleProducts.map((product) => {
-                // (NUEVO) Verifica si el ítem ya está en el carrito
-                const isInCart = cartItemCodes.has(product.code);
+                  <p className="text-xl font-bold text-gray-900 mb-3">
+                    {formatCurrency(product.price)}
+                  </p>
+                  <button
+                    onClick={() => handleAddToCart(product)}
+                    disabled={isInCart}
+                    className={`w-full py-2 px-3 rounded-full flex items-center justify-center gap-1.5 transition-colors text-sm font-bold ${
+                      isInCart
+                        ? 'bg-green-100 text-green-700 cursor-default'
+                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                    }`}
+                  >
+                    {isInCart ? (
+                      <CheckIcon size={16} />
+                    ) : (
+                      <PlusCircleIcon size={16} />
+                    )}
+                    {isInCart ? 'Agregado' : 'Agregar'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
 
-                return (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {product.code}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {product.description}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold text-gray-900">
-                      {formatCurrency(product.price)}
-                    </td>
-                    {/* (NUEVO) Celda de Acción */}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                      <button
-                        onClick={() => handleAddToCart(product)}
-                        disabled={isInCart}
-                        className={`py-1 px-2.5 rounded-full flex items-center justify-center gap-1.5 transition-colors text-xs font-bold ${
-                          isInCart
-                            ? 'bg-green-100 text-green-700 cursor-default'
-                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                        }`}
-                      >
-                        {isInCart ? (
-                          <CheckIcon size={14} />
-                        ) : (
-                          <PlusCircleIcon size={14} />
-                        )}
-                        {isInCart ? 'Agregado' : 'Agregar'}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
+          {/* (MODIFICADO) Vista de Tabla para Escritorio (oculta en móvil) */}
+          <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-200 hidden sm:block">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Código
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Descripción
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Precio (ARS)
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acción
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {visibleProducts.map((product) => {
+                  const isInCart = cartItemCodes.has(product.code);
+                  return (
+                    <tr key={product.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {product.code}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                        {product.description}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold text-gray-900">
+                        {formatCurrency(product.price)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        <button
+                          onClick={() => handleAddToCart(product)}
+                          disabled={isInCart}
+                          className={`py-1 px-2.5 rounded-full flex items-center justify-center gap-1.5 transition-colors text-xs font-bold ${
+                            isInCart
+                              ? 'bg-green-100 text-green-700 cursor-default'
+                              : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                          }`}
+                        >
+                          {isInCart ? (
+                            <CheckIcon size={14} />
+                          ) : (
+                            <PlusCircleIcon size={14} />
+                          )}
+                          {isInCart ? 'Agregado' : 'Agregar'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* --- Trigger de Carga (visible en ambas vistas) --- */}
+          <div ref={ref} className="h-20 flex justify-center items-center">
+            {hasMore ? (
+              <div className="flex justify-center items-center text-sm text-gray-500">
+                <LoaderIcon size={20} className="mr-2" />
+                Cargando más...
+              </div>
+            ) : (
+              <span className="text-sm text-gray-500">Fin de la lista</span>
             )}
-            
-            {/* --- Trigger de Carga (MODIFICADO) --- */}
-            {!isLoading && !error && totalProductsFound > 0 && (
-              <tr ref={ref}>
-                {/* (MODIFICADO) colSpan="4" */}
-                <td colSpan="4" className="text-center py-6">
-                  {hasMore ? (
-                    <div className="flex justify-center items-center text-sm text-gray-500">
-                      <LoaderIcon size={20} className="mr-2" />
-                      Cargando más...
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-500">Fin de la lista</span>
-                  )}
-                </td>
-              </tr>
-            )}
-            
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
