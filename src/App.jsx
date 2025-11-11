@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 
-// --- Iconos (Sin cambios) ---
+// --- Iconos ---
 const SearchIcon = ({ size = 20, className = "" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -87,6 +87,15 @@ const MinusIcon = ({ size = 16, className = "" }) => (
     <line x1="5" y1="12" x2="19" y2="12" />
   </svg>
 );
+
+const MicIcon = ({ size = 20, className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+    <line x1="12" y1="19" x2="12" y2="23" />
+    <line x1="8" y1="23" x2="16" y2="23" />
+  </svg>
+);
 // --- Fin Iconos ---
 
 
@@ -106,9 +115,9 @@ const formatCurrency = (amount) => {
 // --- Constantes ---
 const ITEMS_PER_PAGE = 50;
 
-// --- Componente de Carrito (MODIFICADO) ---
+// --- Componente de Carrito (CORREGIDO) ---
 function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIncrement, onDecrement }) {
-  // Estado para manejar el valor del input temporalmente para evitar que se "trabe"
+  // CORREGIDO: El estado editingQuantity pertenece aquí, dentro de CartList.
   const [editingQuantity, setEditingQuantity] = useState({});
 
   // Calcula el total
@@ -202,7 +211,7 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
                 </button>
                 <input
                   type="number"
-                  min="0" // MODIFICADO: Permite cero
+                  min="0" 
                   // Usa el valor temporal o el valor real del carrito
                   value={editingQuantity[item.code] !== undefined ? editingQuantity[item.code] : item.quantity}
                   onChange={(e) => handleQuantityChange(item.code, e.target.value)}
@@ -268,7 +277,7 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
                     </button>
                     <input
                       type="number"
-                      min="0" // MODIFICADO: Permite cero
+                      min="0" // Permite cero
                       // Usa el valor temporal o el valor real del carrito
                       value={editingQuantity[item.code] !== undefined ? editingQuantity[item.code] : item.quantity}
                       onChange={(e) => handleQuantityChange(item.code, e.target.value)}
@@ -315,12 +324,13 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
 // --- Componente de Página (Refactorizado) ---
 
 function PriceListPage() {
-  // --- Estados (Sin cambios) ---
+  // --- Estados ---
   const [searchTerm, setSearchTerm] = useState('');
   const [allProducts, setAllProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const [isListening, setIsListening] = useState(false); // NUEVO: Estado para el micrófono
   const [cart, setCart] = useState(() => {
     try {
       const savedCart = localStorage.getItem('priceListCart');
@@ -333,6 +343,56 @@ function PriceListPage() {
 
   const { ref, inView } = useInView();
   
+  // --- Lógica de Reconocimiento de Voz (NUEVO) ---
+  const handleVoiceSearch = () => {
+    // Verifica si la API de reconocimiento de voz está disponible
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      console.error('Reconocimiento de voz no soportado en este navegador.');
+      // En lugar de alert, es mejor una notificación menos intrusiva, pero mantenemos por simplicidad.
+      alert('Tu navegador no soporta la búsqueda por voz.');
+      return;
+    }
+
+    // Si ya está escuchando, detiene la escucha para evitar problemas
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-AR'; // Establece el idioma a español (Argentina)
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      console.log('Escuchando...');
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      console.log('Voz reconocida:', transcript);
+      setSearchTerm(transcript); // Aplica la transcripción al campo de búsqueda
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Error en el reconocimiento de voz:', event.error);
+      if (event.error !== 'no-speech') {
+        alert(`Error de voz: ${event.error}`);
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      console.log('Reconocimiento de voz finalizado.');
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
   // --- Carga de Datos y Guardado en LocalStorage (Sin cambios) ---
   useEffect(() => {
     fetch('/products.json')
@@ -361,7 +421,7 @@ function PriceListPage() {
     }
   }, [cart]);
 
-  // --- Lógica del Carrito (MODIFICADA) ---
+  // --- Lógica del Carrito (Sin cambios funcionales en esta sección) ---
   const cartItemCodes = useMemo(() => new Set(cart.map(item => item.code)), [cart]);
 
   const handleAddToCart = (productToAdd) => {
@@ -492,7 +552,7 @@ function PriceListPage() {
         </p>
       </header>
 
-      {/* --- Barra de Filtros (MODIFICADO) --- */}
+      {/* --- Barra de Filtros (MODIFICADO para corregir desfasaje visual) --- */}
       <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-6 p-3 sm:p-4 bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="relative">
           <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
@@ -504,9 +564,28 @@ function PriceListPage() {
             value={searchTerm}
             onChange={handleSearchChange}
             placeholder="Ej: 10001, Z10, Latex..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            // Ajuste en padding para evitar solapamiento
+            className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
-          <SearchIcon size={18} className="absolute left-3 top-9 text-gray-400" />
+          {/* Icono de Lupa a la izquierda - CORREGIDO: Se quitó el 'mt-1' innecesario para un mejor centrado */}
+          <SearchIcon size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          
+          {/* Botón de Búsqueda por Voz a la derecha - CORREGIDO: Se quitó el 'mt-1' innecesario para un mejor centrado */}
+          <button
+            onClick={handleVoiceSearch}
+            className={`absolute right-0 top-1/2 transform -translate-y-1/2 p-2 rounded-full transition-colors ${
+              isListening
+                ? 'text-red-500 hover:text-red-600 animate-pulse'
+                : 'text-gray-500 hover:text-blue-600'
+            }`}
+            title={isListening ? "Escuchando..." : "Buscar por voz"}
+          >
+            {isListening ? (
+              <LoaderIcon size={20} className="text-red-500" />
+            ) : (
+              <MicIcon size={20} />
+            )}
+          </button>
         </div>
       </div>
 
