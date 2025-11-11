@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 
-// --- Iconos (Sin  cambios) ---
+// --- Iconos (Sin cambios) ---
 const SearchIcon = ({ size = 20, className = "" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -119,10 +119,10 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
   // Función local para manejar el cambio en el input
   const handleQuantityChange = (code, value) => {
     // Actualiza el estado local para que el input refleje lo que escribe el usuario,
-    // incluyendo el estado temporal de cadena vacía.
+    // incluyendo el estado temporal de cadena vacía o '0'.
     setEditingQuantity(prev => ({ ...prev, [code]: value }));
 
-    // Si el campo no está vacío, o el usuario presiona Enter, llama a la función de actualización principal
+    // Si el campo no está vacío, llama a la función de actualización principal
     if (value.trim() !== '') {
         onUpdateQuantity(code, value);
     }
@@ -130,12 +130,14 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
 
   // Función local para restablecer el estado temporal al perder el foco
   const handleBlur = (code, quantity) => {
-    // Si el campo quedó vacío (como resultado de haber borrado todo) o tiene un valor inválido,
-    // llamamos a la función de actualización principal para que aplique la lógica de eliminación si es necesario,
-    // o para que fuerce el valor real del carrito si es necesario.
+    // Si el campo quedó vacío (cadena vacía) o es inválido,
+    // usamos la cantidad actual del item para forzar un re-render
     if (editingQuantity[code] === '' || isNaN(parseInt(editingQuantity[code], 10))) {
-        onUpdateQuantity(code, editingQuantity[code]);
+        // Llama a la función de actualización con 0 si el campo estaba vacío/inválido.
+        const valueToUse = 0;
+        onUpdateQuantity(code, valueToUse);
     }
+    
     // Limpia el estado local para que el input vuelva a usar item.quantity
     setEditingQuantity(prev => {
         const newState = { ...prev };
@@ -200,7 +202,7 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
                 </button>
                 <input
                   type="number"
-                  min="1"
+                  min="0" // MODIFICADO: Permite cero
                   // Usa el valor temporal o el valor real del carrito
                   value={editingQuantity[item.code] !== undefined ? editingQuantity[item.code] : item.quantity}
                   onChange={(e) => handleQuantityChange(item.code, e.target.value)}
@@ -266,7 +268,7 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
                     </button>
                     <input
                       type="number"
-                      min="1"
+                      min="0" // MODIFICADO: Permite cero
                       // Usa el valor temporal o el valor real del carrito
                       value={editingQuantity[item.code] !== undefined ? editingQuantity[item.code] : item.quantity}
                       onChange={(e) => handleQuantityChange(item.code, e.target.value)}
@@ -366,9 +368,10 @@ function PriceListPage() {
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.code === productToAdd.code);
       if (existingItem) {
+        // Si ya existe, incrementamos la cantidad, asegurando que sea al menos 1 si estaba en 0
         return prevCart.map(item =>
           item.code === productToAdd.code
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: Math.max(1, item.quantity + 1) } // Asegura al menos 1
             : item
         );
       } else {
@@ -378,25 +381,23 @@ function PriceListPage() {
   };
 
   const handleUpdateQuantity = (productCode, newQuantityStr) => {
-    // Si la cadena está vacía (el usuario borró el número), no hacemos nada con el carrito,
-    // solo permitimos que el input mantenga el campo vacío (manejado por el estado local en CartList).
-    if (newQuantityStr.trim() === '') {
-      return; 
+    // Si la cadena está vacía (el usuario borró el número) o es NaN,
+    // permitimos que el input mantenga el campo vacío/inválido.
+    if (newQuantityStr.trim() === '' || isNaN(parseInt(newQuantityStr, 10))) {
+        // La lógica de actualización la maneja handleBlur al perder el foco
+        return; 
     }
     
     const newQuantity = parseInt(newQuantityStr, 10);
     
-    // Si no es un número válido o es 0/negativo, eliminamos el producto (comportamiento deseado para eliminar)
-    if (isNaN(newQuantity) || newQuantity <= 0) {
-      handleRemoveFromCart(productCode);
-    } else {
-      // Si es un número válido y positivo, actualizamos la cantidad
-      setCart(prevCart =>
+    // Si la cantidad es negativa, la forzamos a 0. No eliminamos el producto.
+    const finalQuantity = Math.max(0, newQuantity);
+    
+    setCart(prevCart =>
         prevCart.map(item =>
-          item.code === productCode ? { ...item, quantity: newQuantity } : item
+          item.code === productCode ? { ...item, quantity: finalQuantity } : item
         )
-      );
-    }
+    );
   };
 
   const handleRemoveFromCart = (productCode) => {
@@ -420,14 +421,15 @@ function PriceListPage() {
   const handleDecrementQuantity = (productCode) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.code === productCode);
-      if (existingItem && existingItem.quantity <= 1) {
-        return prevCart.filter(item => item.code !== productCode);
+      if (existingItem && existingItem.quantity > 0) {
+        return prevCart.map(item =>
+          item.code === productCode
+            ? { ...item, quantity: item.quantity - 1 }
+            : item
+        );
       }
-      return prevCart.map(item =>
-        item.code === productCode
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      );
+      // Si ya está en 0, no hacemos nada, solo se elimina con el botón de papelera.
+      return prevCart;
     });
   };
 
