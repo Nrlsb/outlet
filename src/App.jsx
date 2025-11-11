@@ -108,10 +108,41 @@ const ITEMS_PER_PAGE = 50;
 
 // --- Componente de Carrito (MODIFICADO) ---
 function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIncrement, onDecrement }) {
+  // Estado para manejar el valor del input temporalmente para evitar que se "trabe"
+  const [editingQuantity, setEditingQuantity] = useState({});
+
   // Calcula el total
   const total = useMemo(() => {
     return cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   }, [cartItems]);
+  
+  // Función local para manejar el cambio en el input
+  const handleQuantityChange = (code, value) => {
+    // Actualiza el estado local para que el input refleje lo que escribe el usuario,
+    // incluyendo el estado temporal de cadena vacía.
+    setEditingQuantity(prev => ({ ...prev, [code]: value }));
+
+    // Si el campo no está vacío, o el usuario presiona Enter, llama a la función de actualización principal
+    if (value.trim() !== '') {
+        onUpdateQuantity(code, value);
+    }
+  };
+
+  // Función local para restablecer el estado temporal al perder el foco
+  const handleBlur = (code, quantity) => {
+    // Si el campo quedó vacío (como resultado de haber borrado todo) o tiene un valor inválido,
+    // llamamos a la función de actualización principal para que aplique la lógica de eliminación si es necesario,
+    // o para que fuerce el valor real del carrito si es necesario.
+    if (editingQuantity[code] === '' || isNaN(parseInt(editingQuantity[code], 10))) {
+        onUpdateQuantity(code, editingQuantity[code]);
+    }
+    // Limpia el estado local para que el input vuelva a usar item.quantity
+    setEditingQuantity(prev => {
+        const newState = { ...prev };
+        delete newState[code];
+        return newState;
+    });
+  };
 
   if (cartItems.length === 0) {
     return null; // No mostrar nada si el carrito está vacío
@@ -170,8 +201,10 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
                 <input
                   type="number"
                   min="1"
-                  value={item.quantity}
-                  onChange={(e) => onUpdateQuantity(item.code, e.target.value)}
+                  // Usa el valor temporal o el valor real del carrito
+                  value={editingQuantity[item.code] !== undefined ? editingQuantity[item.code] : item.quantity}
+                  onChange={(e) => handleQuantityChange(item.code, e.target.value)}
+                  onBlur={() => handleBlur(item.code, item.quantity)}
                   className="w-12 text-center border-t border-b border-gray-300 py-1 px-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
                 <button
@@ -234,8 +267,10 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
                     <input
                       type="number"
                       min="1"
-                      value={item.quantity}
-                      onChange={(e) => onUpdateQuantity(item.code, e.target.value)}
+                      // Usa el valor temporal o el valor real del carrito
+                      value={editingQuantity[item.code] !== undefined ? editingQuantity[item.code] : item.quantity}
+                      onChange={(e) => handleQuantityChange(item.code, e.target.value)}
+                      onBlur={() => handleBlur(item.code, item.quantity)}
                       className="w-14 text-center border-t border-b border-gray-300 py-1 px-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                     <button
@@ -324,7 +359,7 @@ function PriceListPage() {
     }
   }, [cart]);
 
-  // --- Lógica del Carrito (Sin cambios) ---
+  // --- Lógica del Carrito (MODIFICADA) ---
   const cartItemCodes = useMemo(() => new Set(cart.map(item => item.code)), [cart]);
 
   const handleAddToCart = (productToAdd) => {
@@ -343,16 +378,25 @@ function PriceListPage() {
   };
 
   const handleUpdateQuantity = (productCode, newQuantityStr) => {
+    // Si la cadena está vacía (el usuario borró el número), no hacemos nada con el carrito,
+    // solo permitimos que el input mantenga el campo vacío (manejado por el estado local en CartList).
+    if (newQuantityStr.trim() === '') {
+      return; 
+    }
+    
     const newQuantity = parseInt(newQuantityStr, 10);
+    
+    // Si no es un número válido o es 0/negativo, eliminamos el producto (comportamiento deseado para eliminar)
     if (isNaN(newQuantity) || newQuantity <= 0) {
       handleRemoveFromCart(productCode);
-      return;
+    } else {
+      // Si es un número válido y positivo, actualizamos la cantidad
+      setCart(prevCart =>
+        prevCart.map(item =>
+          item.code === productCode ? { ...item, quantity: newQuantity } : item
+        )
+      );
     }
-    setCart(prevCart =>
-      prevCart.map(item =>
-        item.code === productCode ? { ...item, quantity: newQuantity } : item
-      )
-    );
   };
 
   const handleRemoveFromCart = (productCode) => {
