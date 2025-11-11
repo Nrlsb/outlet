@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 
-// --- Iconos (Sin cambios) ---
+// --- Iconos (Sin  cambios) ---
 const SearchIcon = ({ size = 20, className = "" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
