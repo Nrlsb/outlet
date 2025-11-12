@@ -10,7 +10,8 @@
  */
 
 import { read, utils } from 'xlsx';
-import { writeFile } from 'fs/promises';
+// (MODIFICADO) Importamos 'readFile' además de 'writeFile'
+import { writeFile, readFile } from 'fs/promises'; 
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -25,13 +26,7 @@ const JSON_OUTPUT_PATH = path.join(__dirname, 'public', 'products.json');
 // Agrega o quita los nombres exactos de las pestañas que quieres leer.
 // ¡Respeta mayúsculas, minúsculas, espacios y comas!
 const SHEET_NAMES_TO_READ = [
-  'variado',
-  '0,25',
-  '0,5',
-  '1',
-  '4',
-  '10',
-  '20'
+  'DA1'
 ];
 
 // --- Mapeo de columnas ---
@@ -63,11 +58,42 @@ function findHeaderIndex(headers, colName) {
 
 async function convertExcelToJson() {
   try {
+    
+    // --- (NUEVO) Cargar productos existentes ---
+    let existingProducts = [];
+    // (MOVIDO) Inicializamos el Map aquí para cargarlo con datos existentes
+    const productMap = new Map(); 
+
+    try {
+      console.log(`Leyendo JSON existente desde: ${JSON_OUTPUT_PATH}`);
+      const existingData = await readFile(JSON_OUTPUT_PATH, 'utf-8');
+      existingProducts = JSON.parse(existingData);
+      
+      if (Array.isArray(existingProducts)) {
+        console.log(`Se encontraron ${existingProducts.length} productos existentes.`);
+        // (NUEVO) Cargar productos existentes en el Map
+        for (const product of existingProducts) {
+          if (product.code) {
+            productMap.set(product.code, product);
+          }
+        }
+        console.log(`Cargados ${productMap.size} productos existentes en el mapa.`);
+      }
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        console.log('No se encontró "products.json" existente. Se creará uno nuevo.');
+      } else {
+        console.warn(`Advertencia: No se pudo leer "products.json". ${err.message}`);
+      }
+    }
+    // --- Fin de carga de productos existentes ---
+
+
     console.log(`Leyendo archivo Excel desde: ${EXCEL_FILE_PATH}`);
     const workbook = read(EXCEL_FILE_PATH, { type: 'file' });
     console.log('Pestañas disponibles en el archivo:', workbook.SheetNames);
 
-    // (NUEVO) Array para guardar todos los productos de todas las pestañas
+    // Array para guardar solo los productos NUEVOS leídos del excel
     let allMappedData = [];
 
     // --- (MODIFICADO) Bucle principal ---
@@ -152,29 +178,29 @@ async function convertExcelToJson() {
     // --- Fin del bucle ---
 
     console.log(`\n--- Proceso completado ---`);
-    console.log(`Total de productos encontrados (antes de deduplicar): ${allMappedData.length}`);
+    console.log(`Total de productos nuevos/actualizados leídos del Excel: ${allMappedData.length}`);
 
-    // --- (NUEVO) Deduplicación ---
-    console.log('Deduplicando productos por código...');
-    const productMap = new Map();
+    // --- (MODIFICADO) Deduplicación y Fusión ---
+    console.log('Fusionando y deduplicando productos por código...');
+    // 'productMap' ya tiene los productos viejos.
+    // Ahora agregamos/sobreescribimos con los nuevos.
     for (const product of allMappedData) {
       if (product.code) {
-        // Si el código ya existe, será sobrescrito por este.
         productMap.set(product.code, product);
       }
     }
 
-    const deduplicatedData = Array.from(productMap.values());
-    console.log(`Total de productos únicos: ${deduplicatedData.length}`);
+    const finalProductList = Array.from(productMap.values());
+    console.log(`Total de productos únicos (final): ${finalProductList.length}`);
     
     // Escribe el archivo JSON final
-    await writeFile(JSON_OUTPUT_PATH, JSON.stringify(deduplicatedData, null, 2));
+    await writeFile(JSON_OUTPUT_PATH, JSON.stringify(finalProductList, null, 2));
 
-    console.log(`¡Éxito! Archivo JSON guardado en: ${JSON_OUTPUT_PATH}`);
+    console.log(`¡Éxito! Archivo JSON actualizado en: ${JSON_OUTPUT_PATH}`);
 
   } catch (error) {
     console.error('Error durante la conversión:');
-    if (error.code === 'ENOENT') {
+    if (error.code === 'ENOENT' && error.path.includes('ListaDeProductos.xlsx')) {
       console.error(`No se pudo encontrar el archivo: ${EXCEL_FILE_PATH}`);
       console.error("Asegúrate de que 'ListaDeProductos.xlsx' esté en la carpeta 'public'.");
     } else {

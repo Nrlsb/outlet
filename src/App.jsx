@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 
 // --- Iconos ---
@@ -112,12 +112,20 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
+// --- Helper: Función para normalizar y quitar acentos (NUEVO) ---
+const normalizeText = (text) => {
+  if (!text) return '';
+  // 1. Normaliza la cadena a su forma de descomposición (NFD) para separar los acentos.
+  // 2. Elimina los caracteres diacríticos (acentos, tildes, etc.) usando una expresión regular.
+  // 3. Convierte a minúsculas.
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+};
+
 // --- Constantes ---
 const ITEMS_PER_PAGE = 50;
 
-// --- Componente de Carrito (CORREGIDO) ---
+// --- Componente de Carrito ---
 function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIncrement, onDecrement }) {
-  // CORREGIDO: El estado editingQuantity pertenece aquí, dentro de CartList.
   const [editingQuantity, setEditingQuantity] = useState({});
 
   // Calcula el total
@@ -126,7 +134,7 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
   }, [cartItems]);
   
   // Función local para manejar el cambio en el input
-  const handleQuantityChange = (code, value) => {
+  const handleQuantityChange = useCallback((code, value) => {
     // Actualiza el estado local para que el input refleje lo que escribe el usuario,
     // incluyendo el estado temporal de cadena vacía o '0'.
     setEditingQuantity(prev => ({ ...prev, [code]: value }));
@@ -135,10 +143,10 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
     if (value.trim() !== '') {
         onUpdateQuantity(code, value);
     }
-  };
+  }, [onUpdateQuantity]);
 
   // Función local para restablecer el estado temporal al perder el foco
-  const handleBlur = (code, quantity) => {
+  const handleBlur = useCallback((code, quantity) => {
     // Si el campo quedó vacío (cadena vacía) o es inválido,
     // usamos la cantidad actual del item para forzar un re-render
     if (editingQuantity[code] === '' || isNaN(parseInt(editingQuantity[code], 10))) {
@@ -153,7 +161,7 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
         delete newState[code];
         return newState;
     });
-  };
+  }, [editingQuantity, onUpdateQuantity]);
 
   if (cartItems.length === 0) {
     return null; // No mostrar nada si el carrito está vacío
@@ -493,18 +501,22 @@ function PriceListPage() {
     });
   };
 
-  // --- Lógica de Filtros (Sin cambios) ---
+  // --- Lógica de Filtros (MODIFICADA para usar normalizeText) ---
   const filteredProducts = useMemo(() => {
     let products = allProducts;
     if (searchTerm) {
-      const searchWords = searchTerm
-        .toLowerCase()
+      // Normaliza el término de búsqueda para ignorar acentos
+      const normalizedSearchTerm = normalizeText(searchTerm);
+
+      const searchWords = normalizedSearchTerm
         .split(' ') 
         .filter(word => word.length > 0); 
+      
       products = products.filter(p => {
-        const productText = (
+        // Normaliza el texto del producto para compararlo
+        const productText = normalizeText(
           (p.description || '') + ' ' + (p.code || '')
-        ).toLowerCase();
+        );
         return searchWords.every(word => productText.includes(word));
       });
     }
@@ -552,7 +564,7 @@ function PriceListPage() {
         </p>
       </header>
 
-      {/* --- Barra de Filtros (MODIFICADO para corregir desfasaje visual) --- */}
+      {/* --- Barra de Filtros --- */}
       <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-6 p-3 sm:p-4 bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="relative">
           <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
