@@ -168,9 +168,10 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
   }
 
   return (
-    <div className="mb-6 bg-white rounded-lg shadow-md border border-gray-200">
+    // <!-- MODIFICADO: Se cambió bg-blue-50 por bg-blue-100 y el borde a juego -->
+    <div className="mb-6 bg-blue-100 rounded-lg shadow-md border border-blue-300">
       {/* (MODIFICADO) Header con padding responsivo y título más chico en móvil */}
-      <header className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
+      <header className="flex items-center justify-between p-3 sm:p-4 border-b border-blue-300">
         <div className="flex items-center gap-3">
           <ShoppingCartIcon className="text-blue-600" />
           {/* (MODIFICADO) Título responsivo */}
@@ -189,7 +190,7 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
       </header>
 
       {/* (NUEVO) Vista de Tarjetas para Móvil */}
-      <div className="sm:hidden divide-y divide-gray-200">
+      <div className="sm:hidden divide-y divide-blue-300">
         {cartItems.map(item => (
           <div key={item.code} className="p-3">
             <div className="flex justify-between items-start">
@@ -245,9 +246,10 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
 
       {/* (MODIFICADO) Vista de Tabla para Escritorio (oculta en móvil) */}
       <div className="overflow-x-auto hidden sm:block">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
+        <table className="min-w-full">
+          {/* <!-- MODIFICADO: Se quitó bg-gray-50 para que herede el bg-blue-100 del contenedor --> */}
+          <thead>
+            <tr className="border-b border-blue-300">
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Código
               </th>
@@ -265,7 +267,8 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          {/* <!-- MODIFICADO: Se quitó bg-white para que herede el bg-blue-100 y se cambió el borde --> */}
+          <tbody className="divide-y divide-blue-200">
             {cartItems.map(item => (
               <tr key={item.code}>
                 <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -319,8 +322,8 @@ function CartList({ cartItems, onRemoveItem, onUpdateQuantity, onClearCart, onIn
         </table>
       </div>
 
-      {/* (NUEVO) Footer con Total (visible en todas las pantallas) */}
-      <footer className="bg-gray-50 p-3 sm:p-4 border-t flex justify-end items-center">
+      {/* <!-- MODIFICADO: Se quitó bg-gray-50 para que herede el bg-blue-100 y se cambió el borde --> */}
+      <footer className="p-3 sm:p-4 border-t border-blue-300 flex justify-end items-center">
         <span className="text-sm font-medium text-gray-700 uppercase mr-4">Total</span>
         <span className="text-xl font-bold text-gray-900">{formatCurrency(total)}</span>
       </footer>
