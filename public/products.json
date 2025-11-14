@@ -7719,5 +7719,124 @@
     "description": "TEXTURANTE MARTILLADO X 0,002",
     "stock": 5,
     "price": 500
+  },
+  {
+    "id": 2364,
+    "code": 2364,
+    "description": "LIJA AL AGUA CS RAPIFIX #  120",
+    "stock": 5,
+    "price": 800
+  },
+  {
+    "id": 2366,
+    "code": 2366,
+    "description": "LIJA AL AGUA CS RAPIFIX #  180",
+    "stock": 5,
+    "price": 800
+  },
+  {
+    "id": 2368,
+    "code": 2368,
+    "description": "LIJA AL AGUA CS RAPIFIX #  240",
+    "stock": 5,
+    "price": 800
+  },
+  {
+    "id": 10503,
+    "code": 10503,
+    "description": "DILUYENTE AGUARRAS PARA ESMALTE X   0,900 (PET)",
+    "stock": 5,
+    "price": 2800
+  },
+  {
+    "id": 20503,
+    "code": 20503,
+    "description": "DILUYENTE AGUARRAS PARA ESMALTE X   4 (PET)",
+    "stock": 5,
+    "price": 10000
+  },
+  {
+    "id": 10707,
+    "code": 10707,
+    "description": "THINNER SELLO DE ORO X   0,900 (PET)",
+    "stock": 5,
+    "price": 4600
+  },
+  {
+    "id": 20707,
+    "code": 20707,
+    "description": "THINNER SELLO DE ORO X   4 (PET)",
+    "stock": 5,
+    "price": 17900
+  },
+  {
+    "id": 567,
+    "code": 567,
+    "description": "PINCEL ROSARPIN 170 V1 NO.15",
+    "stock": 5,
+    "price": 2600
+  },
+  {
+    "id": 569,
+    "code": 569,
+    "description": "PINCEL ROSARPIN 170 V1 NO.25",
+    "stock": 5,
+    "price": 4000
+  },
+  {
+    "id": 987,
+    "code": 987,
+    "description": "RODILLO LUMAR LUDAMAR LANA MARRON 17 (110B)",
+    "stock": 5,
+    "price": 7000
+  },
+  {
+    "id": 593,
+    "code": 593,
+    "description": "RODILLO LUMAR EPOXI PELO CORTO FINO  5(44/A)",
+    "stock": 5,
+    "price": 1100
+  },
+  {
+    "id": 595,
+    "code": 595,
+    "description": "RODILLO LUMAR EPOXI PELO CORTO FINO 10(44/C)",
+    "stock": 5,
+    "price": 1400
+  },
+  {
+    "id": 999998,
+    "code": 999998,
+    "description": "GENERICO 10 LITROS ESTANDAR     ",
+    "stock": 5,
+    "price": 30000
+  },
+  {
+    "id": 999997,
+    "code": 999997,
+    "description": "GENERICO 10 LITROS PREMIUM              ",
+    "stock": 5,
+    "price": 45000
+  },
+  {
+    "id": 999996,
+    "code": 999996,
+    "description": "GENERICO 20 LITROS ESTANDAR             ",
+    "stock": 5,
+    "price": 50000
+  },
+  {
+    "id": 999995,
+    "code": 999995,
+    "description": "GENERICO 20 LITROS PREMIUM              ",
+    "stock": 5,
+    "price": 60000
+  },
+  {
+    "id": "P00003",
+    "code": "P00003",
+    "description": "ENVASADO",
+    "stock": 5,
+    "price": 500
   }
 ]
